@@ -1,5 +1,5 @@
 const AllowedOrigins = [
-    'https://just-chat.vercel.app',
+    'https://just-chat-one.vercel.app/',
     'http://localhost:3000'
 ]
 
