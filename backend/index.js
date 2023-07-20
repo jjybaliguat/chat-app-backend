@@ -46,13 +46,37 @@ const io = new Server(httpServer, {
     }
 });
 
+let onlineUsers = []
+
 io.on("connection", (socket) => {
     console.log("connected to socket.io");
 
     socket.on("setup", (user) => {
         socket.join(user._id)
         socket.emit("connected")
+        if (!onlineUsers.some((onlineUser) => onlineUser.userId === user._id)){
+            onlineUsers.push({
+                userId: user._id,
+            })
+            console.log('New User is Online');
+            console.log('online USers', onlineUsers);
+        }
+
+        io.emit('get-users', onlineUsers)
     });
+
+    socket.on('offline', (current) => {
+        onlineUsers = onlineUsers.filter((user) => user.userId !== current._id);
+        console.log("user is offline", onlineUsers);
+        io.emit("get-users", onlineUsers);
+    })
+    
+    socket.on('disconnect', () => {
+        onlineUsers = onlineUsers.filter((user) => user.socketId !== socket.id);
+        console.log("user disconnected", onlineUsers);
+        io.emit("get-users", onlineUsers);
+    })
+
 
     socket.on('join_chat', (chat) => {
         socket.join(chat)
@@ -68,7 +92,7 @@ io.on("connection", (socket) => {
         if(!chat.users) return console.log('chat.users is not defined')
 
         chat.users.forEach(user=> {
-            console.log(newMessage.message)
+            // console.log(newMessage.message)
             if(user._id == newMessage.sender._id) return;
 
             socket.in(user._id).emit("message_received", newMessage)
